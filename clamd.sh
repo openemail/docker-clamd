@@ -6,6 +6,10 @@ if [[ "${SKIP_CLAMD}" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
   exit 0
 fi
 
+# Cleaning up garbage
+echo "Cleaning up tmp files..."
+rm -rf /var/lib/clamav/clamav-*.tmp
+
 # Prepare whitelist
 
 mkdir -p /run/clamav /var/lib/clamav
@@ -34,18 +38,20 @@ sed -i '/^\s*$/d' /var/lib/clamav/whitelist.ign2
 
 BACKGROUND_TASKS=()
 
+echo "Running freshclam..."
+freshclam
+
 (
 while true; do
-  sleep 1m
+  sleep 12600
   freshclam
-  sleep 1h
 done
 ) &
 BACKGROUND_TASKS+=($!)
 
 (
 while true; do
-  sleep 2m
+  sleep 10m
   SANE_MIRRORS="$(dig +ignore +short rsync.sanesecurity.net)"
   for sane_mirror in ${SANE_MIRRORS}; do
     CE=
@@ -65,11 +71,15 @@ while true; do
     CE=$?
     chmod 755 /var/lib/clamav/
     if [ ${CE} -eq 0 ]; then
-      echo RELOAD | nc localhost 3310
+      while [ ! -z "$(pidof freshclam)" ]; do
+        echo "Freshclam is active, waiting..."
+        sleep 5
+      done
+      echo RELOAD | nc clamd-openemail 3310
       break
     fi
   done
-  sleep 30h
+  sleep 12h
 done
 ) &
 BACKGROUND_TASKS+=($!)
