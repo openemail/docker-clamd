@@ -1,6 +1,6 @@
 FROM debian:stretch-slim
 
-LABEL maintainer "Chinthaka Deshapriya <chinthaka@cybergate.lk>"
+LABEL maintainer "Amila Kothalawala <amila@openemail.io>"
 
 # Installation
 ENV CLAMAV 0.101.4
